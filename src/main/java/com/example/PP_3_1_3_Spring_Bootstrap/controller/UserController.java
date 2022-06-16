@@ -48,20 +48,20 @@ public class UserController {
     public String showUserById(@PathVariable("id") Long id, Model model) {
         User user = userService.getById(id);
         model.addAttribute("user", user);
-        return "show";
+        return "admin";
     }
 
     @GetMapping("/admin/users/add")
     public String newUser(@ModelAttribute("user") User user, Model model) {
         model.addAttribute("allRoles", roleService.getAllRoles());
-        return "add";
+        return "admin";
     }
 
     @PostMapping("/admin/create")
     public String createUser(@ModelAttribute("user") @Valid User user, BindingResult bindingResult,
                              @RequestParam(value = "index", required = false) Long[] index) {
         if (bindingResult.hasErrors()) {
-            return "add";
+            return "admin";
         }
         if (index != null) {
             for (Long id : index) {
