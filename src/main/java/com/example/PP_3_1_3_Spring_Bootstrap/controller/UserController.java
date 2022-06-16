@@ -1,5 +1,4 @@
 package com.example.PP_3_1_3_Spring_Bootstrap.controller;
-
 import com.example.PP_3_1_3_Spring_Bootstrap.model.User;
 import com.example.PP_3_1_3_Spring_Bootstrap.service.RoleService;
 import com.example.PP_3_1_3_Spring_Bootstrap.service.UserService;
@@ -7,15 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @Controller
 public class UserController {
-    private UserService userService;
-    private RoleService roleService;
+    private final UserService userService;
+    private final RoleService roleService;
 
     @Autowired
     public UserController(UserService userService, RoleService roleService) {
@@ -45,14 +44,57 @@ public class UserController {
         return "admin";
     }
 
+    @GetMapping("/admin/users/{id}")
+    public String showUserById(@PathVariable("id") Long id, Model model) {
+        User user = userService.getById(id);
+        model.addAttribute("user", user);
+        return "show";
+    }
+
+    @GetMapping("/admin/users/add")
+    public String newUser(@ModelAttribute("user") User user, Model model) {
+        model.addAttribute("allRoles", roleService.getAllRoles());
+        return "add";
+    }
+
     @PostMapping("/admin/create")
-    public String createUser(@ModelAttribute("newUser") User user) {
+    public String createUser(@ModelAttribute("user") @Valid User user, BindingResult bindingResult,
+                             @RequestParam(value = "index", required = false) Long[] index) {
+        if (bindingResult.hasErrors()) {
+            return "add";
+        }
+        if (index != null) {
+            for (Long id : index) {
+                user.addRole(roleService.findById(id));
+            }
+        } else {
+            user.addRole(roleService.findById(2L));
+        }
         userService.save(user);
         return "redirect:/admin";
     }
 
+    @GetMapping("/admin/{id}/edit")
+    public String editUser(@PathVariable("id") Long id, Model model) {
+        model.addAttribute("allRoles", roleService.getAllRoles());
+        model.addAttribute("user", userService.getById(id));
+        return "admin";
+    }
+
     @PostMapping("/admin/update")
-    public String updateUser(@ModelAttribute("newUser") User user) {
+    public String updateUser(@ModelAttribute("user") @Valid User user, BindingResult bindingResult,
+                             @RequestParam(value = "index", required = false) Long[] index) {
+        if (bindingResult.hasErrors()) {
+            return "admin";
+        }
+
+        if (index != null) {
+            for (Long id : index) {
+                user.addRole(roleService.findById(id));
+            }
+        } else {
+            user.addRole(roleService.findById(2L));
+        }
         userService.update(user);
         return "redirect:/admin";
     }
